@@ -20,7 +20,7 @@ uint8_t device2MacAddr[] = { 0x98, 0xa3, 0x16, 0x8f, 0x7b, 0x20 }; // ID2
 uint8_t device3MacAddr[] = { 0x98, 0xa3, 0x16, 0x8f, 0x7d, 0x70 }; // ID3
 
 uint16_t motorSpeed[] = {5000, 9000, 12000, 15000, 18000, 21000, 24000, 30000};
-int8_t motorSpeedIndex = 2;
+int8_t motorSpeedIndex = 0;
 
 // このM5のmacアドレス
 // 3c:8a:1f:d7:69:bc
@@ -28,8 +28,8 @@ int8_t motorSpeedIndex = 2;
 static LGFX screen;
 static LGFX_Sprite canvas(&screen);
 
-bool drawQueue_;
-bool heartBeatQueue_;
+volatile bool drawQueue_;
+volatile bool heartBeatQueue_;
 
 uint16_t heartBeat_ = 0;
 
@@ -89,7 +89,11 @@ void setup() {
   // MACアドレス48ビットを代入
   SetMacAddrToStr();
 
-  sprintf(motorSpeedText, "Spd. %d", motorSpeed[motorSpeedIndex]);
+  snprintf(motorSpeedText, SHOW_TEXT_LEN, "Spd. %d", motorSpeed[motorSpeedIndex]);
+
+  showText[0][0] = '\0';
+  showText[1][0] = '\0';
+  showText[2][0] = '\0';
 
   drawQueue_ = true;
   heartBeatQueue_ = false;
@@ -114,7 +118,7 @@ void loop() {
     {
       motorSpeedIndex = 0;
     }
-    sprintf(motorSpeedText, "Spd. %d", motorSpeed[motorSpeedIndex]);
+    snprintf(motorSpeedText, SHOW_TEXT_LEN, "Spd. %d", motorSpeed[motorSpeedIndex]);
     drawQueue_ = true;
   }
 
@@ -125,7 +129,7 @@ void loop() {
     {
       motorSpeedIndex = sizeof(motorSpeed)/sizeof(motorSpeed[0]) - 1;
     }
-    sprintf(motorSpeedText, "Spd. %d", motorSpeed[motorSpeedIndex]);
+    snprintf(motorSpeedText, SHOW_TEXT_LEN, "Spd. %d", motorSpeed[motorSpeedIndex]);
     drawQueue_ = true;
   }
 
@@ -140,7 +144,7 @@ void loop() {
         controllerData.cmd = 1;
         controllerData.speed = motorSpeed[motorSpeedIndex];
         espnow.Send(1, &controllerData, sizeof(controllerData)); // id:1に送る
-        sprintf(showText[0], "%c, Mot.1 Left", receivedChar);
+        snprintf(showText[0], SHOW_TEXT_LEN, "%c, Mot.1 Left", receivedChar);
         drawQueue_ = true;
         break;
       case 'e':
@@ -148,7 +152,7 @@ void loop() {
         controllerData.cmd = 2;
         controllerData.speed = motorSpeed[motorSpeedIndex];
         espnow.Send(1, &controllerData, sizeof(controllerData));
-        sprintf(showText[0], "%c, Mot.1 Right", receivedChar);
+        snprintf(showText[0], SHOW_TEXT_LEN, "%c, Mot.1 Right", receivedChar);
         drawQueue_ = true;
         break;
       case 'w':
@@ -156,7 +160,7 @@ void loop() {
         controllerData.cmd = 0;
         controllerData.speed = 0; // 無視される
         espnow.Send(1, &controllerData, sizeof(controllerData));
-        sprintf(showText[0], "%c, Mot.1 Stop", receivedChar);
+        snprintf(showText[0], SHOW_TEXT_LEN, "%c, Mot.1 Stop", receivedChar);
         drawQueue_ = true;
         break;
         
@@ -165,7 +169,7 @@ void loop() {
         controllerData.cmd = 1;
         controllerData.speed = motorSpeed[motorSpeedIndex];
         espnow.Send(2, &controllerData, sizeof(controllerData)); // id:2に送る
-        sprintf(showText[1], "%c, Mot.2 Left", receivedChar);
+        snprintf(showText[1], SHOW_TEXT_LEN, "%c, Mot.2 Left", receivedChar);
         drawQueue_ = true;
         break;
       case 'd':
@@ -173,7 +177,7 @@ void loop() {
         controllerData.cmd = 2;
         controllerData.speed = motorSpeed[motorSpeedIndex];
         espnow.Send(2, &controllerData, sizeof(controllerData));
-        sprintf(showText[1], "%c, Mot.2 Right", receivedChar);
+        snprintf(showText[1], SHOW_TEXT_LEN, "%c, Mot.2 Right", receivedChar);
         drawQueue_ = true;
         break;
       case 's':
@@ -181,7 +185,7 @@ void loop() {
         controllerData.cmd = 0;
         controllerData.speed = 0;
         espnow.Send(2, &controllerData, sizeof(controllerData));
-        sprintf(showText[1], "%c, Mot.2 Stop", receivedChar);
+        snprintf(showText[1], SHOW_TEXT_LEN, "%c, Mot.2 Stop", receivedChar);
         drawQueue_ = true;
         break;
         
@@ -190,7 +194,7 @@ void loop() {
         controllerData.cmd = 1;
         controllerData.speed = motorSpeed[motorSpeedIndex];
         espnow.Send(3, &controllerData, sizeof(controllerData)); // id:3に送る
-        sprintf(showText[2], "%c, Mot.3 Left", receivedChar);
+        snprintf(showText[2], SHOW_TEXT_LEN, "%c, Mot.3 Left", receivedChar);
         drawQueue_ = true;
         break;
       case 'c':
@@ -198,7 +202,7 @@ void loop() {
         controllerData.cmd = 2;
         controllerData.speed = motorSpeed[motorSpeedIndex];
         espnow.Send(3, &controllerData, sizeof(controllerData));
-        sprintf(showText[2], "%c, Mot.3 Right", receivedChar);
+        snprintf(showText[2], SHOW_TEXT_LEN, "%c, Mot.3 Right", receivedChar);
         drawQueue_ = true;
         break;
       case 'x':
@@ -206,13 +210,13 @@ void loop() {
         controllerData.cmd = 0;
         controllerData.speed = 0;
         espnow.Send(3, &controllerData, sizeof(controllerData));
-        sprintf(showText[2], "%c, Mot.3 Stop", receivedChar);
+        snprintf(showText[2], SHOW_TEXT_LEN, "%c, Mot.3 Stop", receivedChar);
         drawQueue_ = true;
         break;
 
       default:
         // ありえないはず
-        sprintf(showText[0], "%c", receivedChar);
+        snprintf(showText[0], SHOW_TEXT_LEN, "%c", receivedChar);
         drawQueue_ = true;
         break;
     }
@@ -220,13 +224,18 @@ void loop() {
 
   if(heartBeatQueue_)
   {
+    noInterrupts();
     heartBeatQueue_ = false;
+    interrupts();
+
     HeartBeatProcess();
   }
 
   if(drawQueue_)
   {
+    noInterrupts();
     drawQueue_ = false;
+    interrupts();
 
     Draw();
     canvas.pushSprite(0, 0);
